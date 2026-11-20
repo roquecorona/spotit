@@ -721,7 +721,8 @@
 
   // ================================================================ road trip tally (the real game, in the car)
   const COLORS = ["#2e86de", "#e8463a", "#2fbf5b", "#8e44ad"];
-  function tallyState() { if (!data.tally) data.tally = { players: [{ name: "Player 1", counts: {}, total: 0 }, { name: "Player 2", counts: {}, total: 0 }], log: [] }; return data.tally; }
+  function tallyState() { if (!data.tally) data.tally = { players: [{ name: "Player 1", counts: {}, total: 0 }, { name: "Player 2", counts: {}, total: 0 }], log: [] }; data.tally.players.forEach(retotal); return data.tally; }
+  function retotal(p) { p.total = ORDER.reduce((s, k) => s + Math.max(0, p.counts[k] || 0) * TARGETS[k].pts, 0); return p.total; }
   function tally() {
     state = "tally"; $("hud").hidden = true;
     const T = tallyState();
@@ -742,7 +743,7 @@
       ORDER.forEach(k => {
         const b = el("button", { class: "tbtn", "aria-label": "Add a " + TARGETS[k].name + " for " + p.name }, thumb(k, 140), "+" + TARGETS[k].pts + " " + TARGETS[k].name, el("span", { class: "c" }, "× " + (p.counts[k] || 0)));
         b.addEventListener("click", () => {
-          p.counts[k] = (p.counts[k] || 0) + 1; p.total += TARGETS[k].pts; T.log.push([pi, k]); if (T.log.length > 200) T.log.shift(); save();
+          p.counts[k] = (p.counts[k] || 0) + 1; retotal(p); T.log.push([pi, k]); if (T.log.length > 200) T.log.shift(); save();
           Snd.spot(TARGETS[k].pts);
           b.querySelector(".c").textContent = "× " + p.counts[k]; card.querySelector(".ptotal").textContent = p.total;
           b.classList.add("flash"); setTimeout(() => b.classList.remove("flash"), 250);
@@ -761,7 +762,7 @@
       T.players.forEach(p => { p.counts = {}; p.total = 0; }); T.log = []; save(); tally();
     } }, "New trip (scores to 0)");
     s.append(el("div", { class: "row" },
-      el("button", { class: "pill on", onclick: () => { const last = T.log.pop(); if (!last) return; const p = T.players[last[0]], k = last[1]; if (p) { p.counts[k] = Math.max(0, (p.counts[k] || 0) - 1); p.total = Math.max(0, p.total - TARGETS[k].pts); } save(); tally(); } }, "↶ Undo last"),
+      el("button", { class: "pill on", onclick: () => { const last = T.log.pop(); if (!last) return; const p = T.players[last[0]], k = last[1]; if (p) { p.counts[k] = Math.max(0, (p.counts[k] || 0) - 1); retotal(p); } save(); tally(); } }, "↶ Undo last"),
       T.players.length < 4 ? el("button", { class: "pill", onclick: () => { T.players.push({ name: "Player " + (T.players.length + 1), counts: {}, total: 0 }); save(); tally(); } }, "+ Add player") : null,
       reset, el("button", { class: "pill", onclick: home }, "← Home")));
     show("sTally");
