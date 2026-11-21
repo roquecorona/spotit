@@ -344,49 +344,65 @@
       g.fillStyle = "#d9dde2"; g.fillRect(0.44 * L, -0.105 * L, 0.08 * L, 0.018 * L); g.fillRect(-0.52 * L, -0.105 * L, 0.08 * L, 0.018 * L);
       wheel(g, fx * L, r * L, ang); wheel(g, rx * L, r * L, ang);
     } else if (kind === "evtol") {
-      // Archer-style air taxi, seen a little from above: white fuselage, one long wing reaching up and back,
-      // three booms on the wing, each with a forward tilt prop and a lift prop on top, and a V-tail
+      // Archer Midnight, side view in cruise: glossy black body with a big wraparound windshield, a long silver wing
+      // on the roof, booms under the wing with five-blade tilt props in front and two-blade lift props behind
+      // (stopped and lined up with the boom in cruise), a tall V-tail and fixed wheels
       const bob = Math.sin(t * 2.2) * 0.012 * L, spin = Math.abs(t) * 40;
-      g.save(); g.translate(0, bob + 0.08 * L);
-      const booms = [[0.1, -0.5], [0.065, -0.43], [0.03, -0.36]];   // far to near: x shift, height on the wing
-      const boom = ([dx, y], k, shadeA) => {
-        g.fillStyle = shadeA; g.fillRect((-0.3 + dx) * L, (y - 0.007) * L, 0.64 * L, 0.014 * L);
-        // forward tilt prop: a blurred disc seen side on, with a spinning blade
-        const fx = (0.34 + dx) * L, yy = y * L;
-        g.fillStyle = "#2a2f36"; g.beginPath(); g.ellipse(fx - 0.02 * L, yy, 0.028 * L, 0.011 * L, 0, 0, Math.PI * 2); g.fill();
-        g.fillStyle = "rgba(190,205,222,.5)"; g.beginPath(); g.ellipse(fx + 0.01 * L, yy, 0.012 * L, 0.07 * L, 0, 0, Math.PI * 2); g.fill();
-        g.strokeStyle = "#2a2f36"; g.lineWidth = Math.max(1.5, L * 0.008); const bl = Math.cos(spin + k) * 0.066 * L;
-        g.beginPath(); g.moveTo(fx + 0.01 * L, yy - bl); g.lineTo(fx + 0.01 * L, yy + bl); g.stroke();
-        // lift prop on a short mast at the back of the boom
-        const rx = (-0.27 + dx) * L, ry = (y - 0.035) * L;
-        g.fillStyle = "#2a2f36"; g.fillRect(rx - 0.006 * L, ry, 0.012 * L, 0.035 * L);
-        g.fillStyle = "rgba(190,205,222,.5)"; g.beginPath(); g.ellipse(rx, ry, 0.08 * L, 0.016 * L, 0, 0, Math.PI * 2); g.fill();
-        const bl2 = Math.cos(spin * 1.1 + k * 2) * 0.08 * L;
-        g.beginPath(); g.moveTo(rx - bl2, ry - 0.004 * L); g.lineTo(rx + bl2, ry + 0.004 * L); g.stroke();
+      g.save(); g.translate(0, bob);
+      const silver = (y0, y1) => { const gr = g.createLinearGradient(0, y0 * L, 0, y1 * L); gr.addColorStop(0, "#f3f5f8"); gr.addColorStop(1, "#9aa3ae"); return gr; };
+      // far tail fin first
+      g.fillStyle = "#3a4250"; path(g, L, [[-0.3, -0.255], [-0.35, -0.45], [-0.4, -0.45], [-0.39, -0.25]]); g.fill();
+      // booms, far to near, each slightly offset so the rows of propellers read as several
+      const booms = [[0.03, -0.028, 0.55], [0.015, -0.014, 0.75], [0, 0, 1]];
+      const boomRow = ([dx, dy, lit], k) => {
+        const y = -0.318 + dy;
+        g.globalAlpha = lit;
+        g.fillStyle = silver(y - 0.01, y + 0.01); g.fillRect((-0.27 + dx) * L, (y - 0.009) * L, 0.57 * L, 0.018 * L);
+        // front tilt prop: nacelle and a spinning five-blade disc facing forward
+        const fx = (0.3 + dx) * L, yy = y * L;
+        g.fillStyle = "#1a1f27"; g.beginPath(); g.moveTo(fx - 0.04 * L, yy - 0.012 * L); g.lineTo(fx + 0.012 * L, yy - 0.01 * L); g.lineTo(fx + 0.022 * L, yy); g.lineTo(fx + 0.012 * L, yy + 0.01 * L); g.lineTo(fx - 0.04 * L, yy + 0.012 * L); g.fill();
+        g.fillStyle = "rgba(170,185,200,.45)"; g.beginPath(); g.ellipse(fx + 0.014 * L, yy, 0.009 * L, 0.075 * L, 0, 0, Math.PI * 2); g.fill();
+        g.strokeStyle = "#1a1f27"; g.lineWidth = Math.max(1.2, L * 0.006);
+        for (let b = 0; b < 5; b++) { const bl = Math.cos(spin + k + b * Math.PI * 2 / 5) * 0.072 * L; g.beginPath(); g.moveTo(fx + 0.014 * L, yy); g.lineTo(fx + 0.014 * L, yy + bl); g.stroke(); }
+        // rear lift prop on a short mast, stopped and lined up with the boom
+        const rx = (-0.235 + dx) * L, ry = yy - 0.03 * L;
+        g.fillStyle = "#1a1f27"; g.fillRect(rx - 0.007 * L, ry, 0.014 * L, 0.03 * L);
+        g.beginPath(); g.ellipse(rx, ry, 0.012 * L, 0.008 * L, 0, 0, Math.PI * 2); g.fill();
+        g.lineWidth = Math.max(1.5, L * 0.009); g.beginPath(); g.moveTo(rx - 0.085 * L, ry + 0.002 * L); g.lineTo(rx + 0.085 * L, ry - 0.002 * L); g.stroke();
+        g.globalAlpha = 1;
       };
-      // the wing, reaching up and back from the roof
-      const wing = g.createLinearGradient(0, -0.52 * L, 0, -0.28 * L); wing.addColorStop(0, "#f9fbfc"); wing.addColorStop(1, "#c9d1da");
-      g.fillStyle = wing; path(g, L, [[0.1, -0.275], [0.16, -0.525], [0.04, -0.525], [-0.12, -0.27]]); g.fill();
-      g.strokeStyle = "rgba(0,0,0,.18)"; g.lineWidth = Math.max(1, L * 0.004); path(g, L, [[0.1, -0.275], [0.16, -0.525], [0.04, -0.525], [-0.12, -0.27]]); g.stroke();
-      booms.forEach((bm, k) => boom(bm, k, k === 2 ? "#3a414b" : "#59606b"));
-      // V-tail
-      g.fillStyle = "#dfe4ea"; path(g, L, [[-0.34, -0.225], [-0.45, -0.37], [-0.5, -0.37], [-0.46, -0.215]]); g.fill();
-      g.fillStyle = "#1f2a44"; path(g, L, [[-0.45, -0.37], [-0.5, -0.37], [-0.49, -0.34], [-0.44, -0.345]]); g.fill();
-      // fuselage
-      const white = g.createLinearGradient(0, -0.28 * L, 0, -0.09 * L); white.addColorStop(0, "#ffffff"); white.addColorStop(0.6, "#e9edf2"); white.addColorStop(1, "#aab3bf");
-      g.fillStyle = white;
-      path(g, L, [[0.44, -0.175], [0.43, -0.13, 0.32, -0.105], [0.0, -0.095], [-0.25, -0.11], [-0.42, -0.19], [-0.46, -0.215], [-0.3, -0.235], [-0.1, -0.27], [0.12, -0.275, 0.25, -0.235], [0.38, -0.215, 0.44, -0.175]]);
+      booms.slice(0, 2).forEach(boomRow);
+      // the wing: a pylon on the roof and the wing section on top
+      g.fillStyle = "#151a22"; path(g, L, [[0.11, -0.29], [0.07, -0.33], [-0.1, -0.33], [-0.13, -0.288]]); g.fill();
+      g.fillStyle = silver(-0.355, -0.325);
+      path(g, L, [[0.13, -0.338], [0.13, -0.358, 0.02, -0.36], [-0.1, -0.348], [-0.11, -0.342], [0.0, -0.33, 0.13, -0.338]]); g.fill();
+      boomRow(booms[2], 2);
+      // landing gear
+      g.fillStyle = "#2a2f36"; g.fillRect(0.285 * L, -0.07 * L, 0.014 * L, 0.05 * L); g.fillRect(-0.075 * L, -0.08 * L, 0.018 * L, 0.06 * L);
+      [[0.292, 0.022], [-0.066, 0.026]].forEach(([x, r]) => { g.fillStyle = "#121316"; g.beginPath(); g.arc(x * L, -r * L, r * L, 0, Math.PI * 2); g.fill(); g.fillStyle = "#8d949d"; g.beginPath(); g.arc(x * L, -r * L, r * L * 0.45, 0, Math.PI * 2); g.fill(); });
+      // fuselage: glossy black pod tapering to a thin tail boom
+      const body = g.createLinearGradient(0, -0.3 * L, 0, -0.06 * L); body.addColorStop(0, "#4a5466"); body.addColorStop(0.35, "#1b222d"); body.addColorStop(1, "#07090c");
+      g.fillStyle = body;
+      path(g, L, [[0.4, -0.095], [0.455, -0.13, 0.44, -0.185], [0.4, -0.262, 0.24, -0.288], [0.0, -0.3], [-0.12, -0.292], [-0.3, -0.262, -0.44, -0.258], [-0.475, -0.245],
+        [-0.45, -0.222], [-0.26, -0.18, -0.1, -0.085], [0.25, -0.062], [0.37, -0.066, 0.4, -0.095]]);
       g.fill();
-      g.fillStyle = "#1f2a44"; path(g, L, [[0.4, -0.13], [0.3, -0.112], [0.0, -0.103], [-0.25, -0.118], [-0.38, -0.17], [-0.25, -0.135], [0.0, -0.12], [0.3, -0.128]]); g.fill();
-      // windows
-      g.fillStyle = GLASS; path(g, L, [[0.37, -0.2], [0.28, -0.245, 0.16, -0.262], [0.13, -0.21]]); g.fill();
-      [[0.08, -0.04], [-0.06, -0.18]].forEach(([a, b]) => { path(g, L, [[a, -0.248], [b, -0.248], [b - 0.01, -0.2], [a - 0.01, -0.2]]); g.fill(); });
-      g.fillStyle = "rgba(255,255,255,.18)"; path(g, L, [[0.33, -0.205], [0.27, -0.235, 0.19, -0.25], [0.2, -0.215]]); g.fill();
-      seam(g, L, 0.11, -0.255, 0.1, -0.12, 0.2);
-      // nav lights
-      g.fillStyle = "#ff3b3b"; g.beginPath(); g.arc(-0.48 * L, -0.36 * L, 0.009 * L, 0, Math.PI * 2); g.fill();
-      g.fillStyle = "#2ee66b"; g.beginPath(); g.arc(0.16 * L, -0.525 * L, 0.009 * L, 0, Math.PI * 2); g.fill();
-      g.fillStyle = Math.sin(t * 6) > 0.6 ? "#ffffff" : "#9fe8ff"; g.beginPath(); g.arc(0.44 * L, -0.172 * L, 0.008 * L, 0, Math.PI * 2); g.fill();
+      // shine along the top
+      g.strokeStyle = "rgba(255,255,255,.35)"; g.lineWidth = Math.max(1, L * 0.006);
+      g.beginPath(); g.moveTo(0.3 * L, -0.28 * L); g.quadraticCurveTo(0.05 * L, -0.298 * L, -0.25 * L, -0.27 * L); g.stroke();
+      // big wraparound windshield and the cabin window
+      g.fillStyle = "#05070a"; path(g, L, [[0.435, -0.15], [0.42, -0.215, 0.33, -0.262], [0.2, -0.284], [0.21, -0.2], [0.33, -0.14]]); g.fill();
+      g.fillStyle = "rgba(160,200,255,.22)"; path(g, L, [[0.405, -0.19], [0.37, -0.24, 0.3, -0.265], [0.27, -0.23]]); g.fill();
+      g.fillStyle = "#05070a"; path(g, L, [[0.16, -0.272], [0.0, -0.28], [-0.02, -0.19], [0.14, -0.185]]); g.fill();
+      g.fillStyle = "rgba(160,200,255,.16)"; path(g, L, [[0.13, -0.265], [0.04, -0.27], [0.03, -0.235]]); g.fill();
+      // silver line along the side
+      g.strokeStyle = "#b9c1cb"; g.lineWidth = Math.max(1, L * 0.006);
+      g.beginPath(); g.moveTo(0.4 * L, -0.12 * L); g.quadraticCurveTo(0.1 * L, -0.1 * L, -0.12 * L, -0.135 * L); g.lineTo(-0.44 * L, -0.235 * L); g.stroke();
+      // near tail fin
+      g.fillStyle = silver(-0.48, -0.25); path(g, L, [[-0.33, -0.258], [-0.42, -0.475], [-0.475, -0.475], [-0.455, -0.245]]); g.fill();
+      g.fillStyle = "#151a22"; path(g, L, [[-0.42, -0.475], [-0.475, -0.475], [-0.47, -0.44], [-0.41, -0.445]]); g.fill();
+      // lights
+      g.fillStyle = "#ff3b3b"; g.beginPath(); g.arc(-0.46 * L, -0.47 * L, 0.009 * L, 0, Math.PI * 2); g.fill();
+      g.fillStyle = Math.sin(t * 6) > 0.6 ? "#ffffff" : "#9fe8ff"; g.beginPath(); g.arc(0.44 * L, -0.13 * L, 0.008 * L, 0, Math.PI * 2); g.fill();
       g.restore();
     } else if (kind === "suv") {
       // a boxy SUV with a grille, chrome trim, roof rails and no roof sensor
@@ -495,13 +511,13 @@
     }
   }
   const SIZE = { evtol: 1.15, beetle: 0.82, rainbow: 1, gold: 1, tesla: 1, waymo: 1, cybertruck: 1.18, cybercab: 0.86, roadster: 0.95, sedan: 1, suv: 1, pickup: 1.15, van: 1.05, hatch: 0.85, taxi: 1, sports: 0.98, bus: 2.2 };
-  const HEIGHT = { evtol: 0.47, beetle: 0.38, rainbow: 0.33, gold: 0.33, tesla: 0.36, waymo: 0.45, cybertruck: 0.34, cybercab: 0.35, roadster: 0.5, sedan: 0.33, suv: 0.39, pickup: 0.41, van: 0.41, hatch: 0.34, taxi: 0.37, sports: 0.3, bus: 0.35 };
+  const HEIGHT = { evtol: 0.48, beetle: 0.38, rainbow: 0.33, gold: 0.33, tesla: 0.36, waymo: 0.45, cybertruck: 0.34, cybercab: 0.35, roadster: 0.5, sedan: 0.33, suv: 0.39, pickup: 0.41, van: 0.41, hatch: 0.34, taxi: 0.37, sports: 0.3, bus: 0.35 };
   function thumb(kind, w) {
     const c = document.createElement("canvas"), dpr = Math.min(2, window.devicePixelRatio || 1);
     c.width = w * dpr; c.height = w / 2 * dpr;
     const g = c.getContext("2d"); g.scale(dpr, dpr);
     const L = w * 0.86 / (SIZE[kind] > 1.2 ? SIZE[kind] : 1);
-    g.translate(w / 2, w / 2 * 0.86); drawVehicle(g, kind, (PAINT[kind] || ["#c8202f"])[kind === "tesla" ? 2 : 0], L * Math.min(1, SIZE[kind]), 0);
+    g.translate(w / 2, w / 2 * 0.86); drawVehicle(g, kind, (PAINT[kind] || ["#c8202f"])[kind === "tesla" ? 2 : 0], L * Math.min(1, SIZE[kind]) * (kind === "evtol" ? 0.76 : 1), 0);
     return c;
   }
 
@@ -819,7 +835,7 @@
       waymo: "A white Jaguar that drives itself. Look for the tall black sensor tower on the roof, cameras on the corners and \"waymo\" on the door.",
       cybercab: "A tiny gold two-seater robotaxi shaped like a teardrop, with light bars on both ends and no steering wheel inside.",
       roadster: "Super rare! A low red sports car that flies on rocket thrusters. If you see one, tap it fast!",
-      evtol: "The rarest of all! An electric air taxi with a wing and lots of little propellers. It only flies, so look up in the sky!",
+      evtol: "The rarest of all! Archer Midnight, an electric air taxi: a shiny black body, a long wing on top with twelve propellers, and a tall V-shaped tail. It only flies, so look up in the sky!",
     };
     s.append(el("h2", null, "Car Guide"));
     ORDER.forEach(k => s.append(el("div", { class: "panel", style: "display:flex;gap:14px;align-items:center;flex-wrap:wrap" }, thumb(k, 220),
