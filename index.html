@@ -131,13 +131,15 @@
   // ================================================================ the vehicles
   const TARGETS = {
     beetle:     { name: "VW Beetle",  pts: 1 },
+    rainbow:    { name: "Rainbow Car", pts: 2 },
+    gold:       { name: "Gold Car",   pts: 2 },
     tesla:      { name: "Tesla",      pts: 3 },
     cybertruck: { name: "Cybertruck", pts: 5 },
     waymo:      { name: "Waymo",      pts: 6 },
     cybercab:   { name: "Cybercab",   pts: 7 },
     roadster:   { name: "Roadster",   pts: 16 },
   };
-  const ORDER = ["beetle", "tesla", "cybertruck", "waymo", "cybercab", "roadster"];
+  const ORDER = ["beetle", "rainbow", "gold", "tesla", "cybertruck", "waymo", "cybercab", "roadster"];
   const DECOYS = ["sedan", "sedan", "suv", "suv", "pickup", "van", "hatch", "taxi", "sports", "bus"];
   const PAINT = {
     tesla: ["#f4f5f7", "#1b1e24", "#c8202f", "#1f3f8f", "#7d8590"],
@@ -173,7 +175,7 @@
       g.fillStyle = gr; g.beginPath(); g.arc(x, -r, rr, 0, Math.PI * 2); g.fill();
       g.strokeStyle = "rgba(0,0,0,.25)"; g.lineWidth = r * 0.05; g.beginPath(); g.arc(x, -r, rr * 0.55, 0, Math.PI * 2); g.stroke();
     } else {                         // ordinary alloy wheel
-      g.fillStyle = style === "dark" ? "#3a3e45" : "#b9bec5"; g.beginPath(); g.arc(x, -r, rr, 0, Math.PI * 2); g.fill();
+      g.fillStyle = style === "dark" ? "#3a3e45" : style === "gold" ? "#f2c230" : "#b9bec5"; g.beginPath(); g.arc(x, -r, rr, 0, Math.PI * 2); g.fill();
       g.strokeStyle = style === "dark" ? "#24272c" : "#6e747c"; g.lineWidth = r * 0.12;
       for (let k = 0; k < 5; k++) { const a = ang + k * Math.PI * 2 / 5; g.beginPath(); g.moveTo(x, -r); g.lineTo(x + Math.cos(a) * rr * 0.9, -r + Math.sin(a) * rr * 0.9); g.stroke(); }
       g.fillStyle = "#4a4f57"; g.beginPath(); g.arc(x, -r, rr * 0.22, 0, Math.PI * 2); g.fill();
@@ -400,12 +402,24 @@
       wheel(g, fx * L, r * L, ang, "dark"); wheel(g, rx * L, r * L, ang, "dark");
     } else {
       // sedan, hatchback and taxi: grille, separate trunk (or a short hatch), chrome window trim
-      const hatch = kind === "hatch", taxi = kind === "taxi", c = taxi ? "#ffc61a" : col;
+      const hatch = kind === "hatch", taxi = kind === "taxi", rainbow = kind === "rainbow", gold = kind === "gold";
+      const c = taxi ? "#ffc61a" : rainbow ? "#8e44ad" : gold ? "#e0b324" : col;
       const r = 0.07, fx = hatch ? 0.3 : 0.31, rx = hatch ? -0.3 : -0.3;
       g.fillStyle = paint(g, c, L, -0.32, -0.05);
+      if (rainbow) {   // bright bands top to bottom, drifting slowly so it shimmers
+        const gr = g.createLinearGradient(-0.5 * L, -0.32 * L, 0.5 * L, -0.05 * L), cols = ["#ff2d2d", "#ff8c1a", "#ffe11a", "#2ecc40", "#1e90ff", "#8e44ff", "#ff3fb4"];
+        const off = (t * 0.15) % 1;
+        for (let k = 0; k <= 14; k++) { const pos = (k / 14 + off) % 1; gr.addColorStop(pos, cols[k % 7]); }
+        g.fillStyle = gr;
+      } else if (gold) {
+        const gr = g.createLinearGradient(0, -0.32 * L, 0, -0.05 * L);
+        gr.addColorStop(0, "#fff7c2"); gr.addColorStop(0.25, "#ffd700"); gr.addColorStop(0.5, "#fff1a0"); gr.addColorStop(0.75, "#d49b0a"); gr.addColorStop(1, "#8a6200");
+        g.fillStyle = gr; g.shadowColor = "#ffd700"; g.shadowBlur = L * 0.06;
+      }
       if (hatch) path(g, L, [[0.48, -0.06], [0.5, -0.16], [0.42, -0.19], [0.2, -0.215], [0.07, -0.315], [-0.33, -0.32], [-0.48, -0.24], [-0.49, -0.07]]);
       else path(g, L, [[0.49, -0.06], [0.5, -0.165], [0.42, -0.195], [0.19, -0.21], [0.06, -0.31], [-0.17, -0.312], [-0.32, -0.225], [-0.47, -0.22], [-0.49, -0.16], [-0.49, -0.07]]);
-      g.fill();
+      g.fill(); g.shadowBlur = 0;
+      if (rainbow || gold) { g.fillStyle = "rgba(255,255,255,.28)"; g.fillRect(-0.47 * L, -0.2 * L, 0.94 * L, 0.012 * L); }
       wells(g, L, [fx, rx], r);
       g.fillStyle = GLASS;
       const win = hatch ? [[0.18, -0.217], [0.07, -0.3], [-0.31, -0.305], [-0.42, -0.235]] : [[0.17, -0.212], [0.065, -0.297], [-0.16, -0.298], [-0.29, -0.222]];
@@ -422,11 +436,20 @@
         g.fillStyle = "#1a1a1a"; g.fillRect(-0.1 * L, -0.355 * L, 0.13 * L, 0.045 * L); g.fillStyle = "#fff"; g.fillRect(-0.085 * L, -0.348 * L, 0.1 * L, 0.03 * L);
         g.fillStyle = "#1a1a1a"; for (let k = 0; k < 8; k++) g.fillRect((-0.4 + k * 0.1) * L, -0.15 * L, 0.05 * L, 0.02 * L);
       }
-      wheel(g, fx * L, r * L, ang); wheel(g, rx * L, r * L, ang);
+      wheel(g, fx * L, r * L, ang, gold ? "gold" : undefined); wheel(g, rx * L, r * L, ang, gold ? "gold" : undefined);
+      if (gold) {   // twinkling sparkles
+        [[0.32, -0.19], [-0.1, -0.27], [-0.38, -0.2], [0.05, -0.13], [0.42, -0.12]].forEach(([x, y], k) => {
+          const a = Math.max(0, Math.sin(t * 4 + k * 1.7)), s = L * 0.03 * a;
+          if (s < 0.5) return;
+          g.fillStyle = "rgba(255,255,255," + (0.5 + a * 0.5) + ")"; g.beginPath();
+          g.moveTo(x * L, y * L - s); g.lineTo(x * L + s * 0.25, y * L); g.lineTo(x * L, y * L + s); g.lineTo(x * L - s * 0.25, y * L); g.closePath();
+          g.moveTo(x * L - s, y * L); g.lineTo(x * L, y * L + s * 0.25); g.lineTo(x * L + s, y * L); g.lineTo(x * L, y * L - s * 0.25); g.closePath(); g.fill();
+        });
+      }
     }
   }
-  const SIZE = { beetle: 0.82, tesla: 1, waymo: 1, cybertruck: 1.18, cybercab: 0.86, roadster: 0.95, sedan: 1, suv: 1, pickup: 1.15, van: 1.05, hatch: 0.85, taxi: 1, sports: 0.98, bus: 2.2 };
-  const HEIGHT = { beetle: 0.38, tesla: 0.36, waymo: 0.45, cybertruck: 0.34, cybercab: 0.35, roadster: 0.5, sedan: 0.33, suv: 0.39, pickup: 0.41, van: 0.41, hatch: 0.34, taxi: 0.37, sports: 0.3, bus: 0.35 };
+  const SIZE = { beetle: 0.82, rainbow: 1, gold: 1, tesla: 1, waymo: 1, cybertruck: 1.18, cybercab: 0.86, roadster: 0.95, sedan: 1, suv: 1, pickup: 1.15, van: 1.05, hatch: 0.85, taxi: 1, sports: 0.98, bus: 2.2 };
+  const HEIGHT = { beetle: 0.38, rainbow: 0.33, gold: 0.33, tesla: 0.36, waymo: 0.45, cybertruck: 0.34, cybercab: 0.35, roadster: 0.5, sedan: 0.33, suv: 0.39, pickup: 0.41, van: 0.41, hatch: 0.34, taxi: 0.37, sports: 0.3, bus: 0.35 };
   function thumb(kind, w) {
     const c = document.createElement("canvas"), dpr = Math.min(2, window.devicePixelRatio || 1);
     c.width = w * dpr; c.height = w / 2 * dpr;
@@ -485,7 +508,7 @@
     const li = laneInfo()[lane];
     const special = Math.random() < lv.special;
     let kind;
-    if (special) { const r = Math.random(); kind = r < 0.28 ? "beetle" : r < 0.6 ? "tesla" : r < 0.79 ? "cybertruck" : r < 0.9 ? "waymo" : r < 0.975 ? "cybercab" : "roadster"; }
+    if (special) { const r = Math.random(); kind = r < 0.24 ? "beetle" : r < 0.33 ? "rainbow" : r < 0.42 ? "gold" : r < 0.64 ? "tesla" : r < 0.8 ? "cybertruck" : r < 0.9 ? "waymo" : r < 0.975 ? "cybercab" : "roadster"; }
     else kind = pick(DECOYS);
     const col = kind === "tesla" ? pick(PAINT.tesla) : pick(PAINT[kind] || ["#c8202f"]);
     const L = li.L * SIZE[kind];
@@ -734,6 +757,8 @@
     const s = $("sGuide"); s.innerHTML = "";
     const tips = {
       beetle: "A small round car shaped like a bug, from Volkswagen. Look for the big round roof, round headlights and bulging fenders. Shout \"Punch buggy!\"",
+      rainbow: "A car painted in every color of the rainbow: red, orange, yellow, green, blue and purple all at once!",
+      gold: "A shiny, sparkly gold car that glows in the sun, with gold wheels too.",
       tesla: "A Model Y or Model 3: smooth and rounded, no grille on the front, and one dark glass roof from the windshield to the back. Comes in white, black, red, blue and grey.",
       cybertruck: "Shiny stainless steel, shaped like a giant triangle with flat sides, big square wheel arches and one long light bar across the nose.",
       waymo: "A white Jaguar that drives itself. Look for the tall black sensor tower on the roof, cameras on the corners and \"waymo\" on the door.",
