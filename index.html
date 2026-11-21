@@ -130,17 +130,19 @@
 
   // ================================================================ the vehicles
   const TARGETS = {
+    beetle:     { name: "VW Beetle",  pts: 1 },
     tesla:      { name: "Tesla",      pts: 3 },
     cybertruck: { name: "Cybertruck", pts: 5 },
     waymo:      { name: "Waymo",      pts: 6 },
     cybercab:   { name: "Cybercab",   pts: 7 },
     roadster:   { name: "Roadster",   pts: 16 },
   };
-  const ORDER = ["tesla", "cybertruck", "waymo", "cybercab", "roadster"];
+  const ORDER = ["beetle", "tesla", "cybertruck", "waymo", "cybercab", "roadster"];
   const DECOYS = ["sedan", "sedan", "suv", "suv", "pickup", "van", "hatch", "taxi", "sports", "bus"];
   const PAINT = {
     tesla: ["#f4f5f7", "#1b1e24", "#c8202f", "#1f3f8f", "#7d8590"],
     roadster: ["#c8202f"],
+    beetle: ["#6fa8dc", "#f4d03f", "#e74c3c", "#58b368", "#f2efe6", "#f39c12", "#9b59b6"],
     sedan: ["#f2f2f2", "#222831", "#b8bec7", "#2e5aa8", "#b52a2a", "#3c7a4a", "#7a4a2a"],
     suv: ["#f6f7f8", "#2b2f36", "#8d949d", "#1e4c7a", "#6b2b2b"],
     pickup: ["#b8bec7", "#c0392b", "#222831", "#f2f2f2", "#2c5d8f"],
@@ -308,6 +310,36 @@
       g.fillStyle = "#30343b"; [0.32, -0.32, 0.02].forEach(x => g.fillRect((x - 0.03) * L, -0.05 * L, 0.06 * L, 0.02 * L));
       wheel(g, fx * L, r * L, ang, "dark"); wheel(g, rx * L, r * L, ang, "dark");
       g.restore();
+    } else if (kind === "beetle") {
+      // classic Volkswagen Beetle: one round dome, bulging fenders, round headlights, running board, chrome bumpers
+      const r = 0.075, fx = 0.31, rx = -0.3;
+      g.fillStyle = "#2a2d33"; g.fillRect(0.08 * L, -0.075 * L, -0.27 * L, 0.02 * L);
+      g.fillStyle = paint(g, col, L, -0.38, -0.06);
+      path(g, L, [[0.46, -0.1], [0.47, -0.15, 0.4, -0.17], [0.3, -0.19, 0.2, -0.235], [0.1, -0.375, -0.07, -0.375],
+        [-0.3, -0.375, -0.43, -0.2], [-0.48, -0.14, -0.45, -0.1], [-0.3, -0.07], [0.3, -0.07]]);
+      g.fill();
+      // fenders, a little darker so the bulge reads
+      g.fillStyle = paint(g, shade(col, -0.06), L, -0.24, -0.06);
+      path(g, L, [[0.15, -0.07], [0.17, -0.215, 0.32, -0.22], [0.47, -0.215, 0.5, -0.1], [0.5, -0.07]]); g.fill();
+      path(g, L, [[-0.15, -0.07], [-0.16, -0.225, -0.3, -0.232], [-0.45, -0.23, -0.49, -0.11], [-0.48, -0.07]]); g.fill();
+      wells(g, L, [fx, rx], r);
+      // windows: windshield to rear quarter, with the door pillar
+      g.fillStyle = GLASS;
+      path(g, L, [[0.17, -0.235], [0.08, -0.35, -0.06, -0.352], [-0.24, -0.35, -0.33, -0.24]]); g.fill();
+      g.fillStyle = col; g.fillRect(-0.07 * L, -0.36 * L, 0.022 * L, 0.13 * L);
+      g.fillStyle = "rgba(255,255,255,.12)"; path(g, L, [[0.14, -0.24], [0.08, -0.32, 0.0, -0.335], [-0.02, -0.24]]); g.fill();
+      g.strokeStyle = "#c9ced5"; g.lineWidth = L * 0.005;
+      path(g, L, [[0.17, -0.235], [0.08, -0.35, -0.06, -0.352], [-0.24, -0.35, -0.33, -0.24]]); g.stroke();
+      // door seam and handle
+      seam(g, L, 0.15, -0.23, 0.14, -0.08); seam(g, L, -0.12, -0.235, -0.13, -0.08);
+      g.fillStyle = "#c9ced5"; g.fillRect(-0.11 * L, -0.21 * L, 0.04 * L, 0.008 * L);
+      // round headlight on the front fender, taillight on the rear one
+      g.fillStyle = "#c9ced5"; g.beginPath(); g.ellipse(0.43 * L, -0.185 * L, 0.025 * L, 0.03 * L, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#fff6d6"; g.shadowColor = "#fff6d6"; g.shadowBlur = L * 0.03; g.beginPath(); g.ellipse(0.437 * L, -0.185 * L, 0.017 * L, 0.024 * L, 0, 0, Math.PI * 2); g.fill(); g.shadowBlur = 0;
+      lamp(g, L, [[-0.44, -0.2], [-0.47, -0.17], [-0.475, -0.14], [-0.45, -0.16]], "#d11a2a", true);
+      // chrome bumpers
+      g.fillStyle = "#d9dde2"; g.fillRect(0.44 * L, -0.105 * L, 0.08 * L, 0.018 * L); g.fillRect(-0.52 * L, -0.105 * L, 0.08 * L, 0.018 * L);
+      wheel(g, fx * L, r * L, ang); wheel(g, rx * L, r * L, ang);
     } else if (kind === "suv") {
       // a boxy SUV with a grille, chrome trim, roof rails and no roof sensor
       const r = 0.085, fx = 0.31, rx = -0.31;
@@ -393,8 +425,8 @@
       wheel(g, fx * L, r * L, ang); wheel(g, rx * L, r * L, ang);
     }
   }
-  const SIZE = { tesla: 1, waymo: 1, cybertruck: 1.18, cybercab: 0.86, roadster: 0.95, sedan: 1, suv: 1, pickup: 1.15, van: 1.05, hatch: 0.85, taxi: 1, sports: 0.98, bus: 2.2 };
-  const HEIGHT = { tesla: 0.36, waymo: 0.45, cybertruck: 0.34, cybercab: 0.35, roadster: 0.5, sedan: 0.33, suv: 0.39, pickup: 0.41, van: 0.41, hatch: 0.34, taxi: 0.37, sports: 0.3, bus: 0.35 };
+  const SIZE = { beetle: 0.82, tesla: 1, waymo: 1, cybertruck: 1.18, cybercab: 0.86, roadster: 0.95, sedan: 1, suv: 1, pickup: 1.15, van: 1.05, hatch: 0.85, taxi: 1, sports: 0.98, bus: 2.2 };
+  const HEIGHT = { beetle: 0.38, tesla: 0.36, waymo: 0.45, cybertruck: 0.34, cybercab: 0.35, roadster: 0.5, sedan: 0.33, suv: 0.39, pickup: 0.41, van: 0.41, hatch: 0.34, taxi: 0.37, sports: 0.3, bus: 0.35 };
   function thumb(kind, w) {
     const c = document.createElement("canvas"), dpr = Math.min(2, window.devicePixelRatio || 1);
     c.width = w * dpr; c.height = w / 2 * dpr;
@@ -453,7 +485,7 @@
     const li = laneInfo()[lane];
     const special = Math.random() < lv.special;
     let kind;
-    if (special) { const r = Math.random(); kind = r < 0.465 ? "tesla" : r < 0.725 ? "cybertruck" : r < 0.885 ? "waymo" : r < 0.975 ? "cybercab" : "roadster"; }
+    if (special) { const r = Math.random(); kind = r < 0.28 ? "beetle" : r < 0.6 ? "tesla" : r < 0.79 ? "cybertruck" : r < 0.9 ? "waymo" : r < 0.975 ? "cybercab" : "roadster"; }
     else kind = pick(DECOYS);
     const col = kind === "tesla" ? pick(PAINT.tesla) : pick(PAINT[kind] || ["#c8202f"]);
     const L = li.L * SIZE[kind];
@@ -701,6 +733,7 @@
   function guide() {
     const s = $("sGuide"); s.innerHTML = "";
     const tips = {
+      beetle: "A small round car shaped like a bug, from Volkswagen. Look for the big round roof, round headlights and bulging fenders. Shout \"Punch buggy!\"",
       tesla: "A Model Y or Model 3: smooth and rounded, no grille on the front, and one dark glass roof from the windshield to the back. Comes in white, black, red, blue and grey.",
       cybertruck: "Shiny stainless steel, shaped like a giant triangle with flat sides, big square wheel arches and one long light bar across the nose.",
       waymo: "A white Jaguar that drives itself. Look for the tall black sensor tower on the roof, cameras on the corners and \"waymo\" on the door.",
