@@ -86,7 +86,7 @@
   .scoreTable { width: 100%; border-collapse: collapse; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
   .scoreTable td { padding: 6px 8px; border-bottom: 2px solid #e2e8f0; }
   .scoreTable td:last-child { text-align: right; }
-  .burst { position: fixed; pointer-events: none; z-index: 30; font-size: 28px; animation: fall 1.6s linear forwards; }
+  .burst { position: fixed; pointer-events: none; z-index: 30; font-size: 28px; will-change: transform; animation: fall 1.6s linear forwards; }
   @keyframes fall { to { transform: translateY(105vh) rotate(500deg); } }
   @media (prefers-reduced-motion: reduce) { .burst { display: none; } }
 </style>
@@ -138,8 +138,9 @@
     waymo:      { name: "Waymo",      pts: 6 },
     cybercab:   { name: "Cybercab",   pts: 7 },
     roadster:   { name: "Roadster",   pts: 16 },
+    evtol:      { name: "Archer eVTOL", pts: 20 },
   };
-  const ORDER = ["beetle", "rainbow", "gold", "tesla", "cybertruck", "waymo", "cybercab", "roadster"];
+  const ORDER = ["beetle", "rainbow", "gold", "tesla", "cybertruck", "waymo", "cybercab", "roadster", "evtol"];
   const DECOYS = ["sedan", "sedan", "suv", "suv", "pickup", "van", "hatch", "taxi", "sports", "bus"];
   const PAINT = {
     tesla: ["#f4f5f7", "#1b1e24", "#c8202f", "#1f3f8f", "#7d8590"],
@@ -342,6 +343,51 @@
       // chrome bumpers
       g.fillStyle = "#d9dde2"; g.fillRect(0.44 * L, -0.105 * L, 0.08 * L, 0.018 * L); g.fillRect(-0.52 * L, -0.105 * L, 0.08 * L, 0.018 * L);
       wheel(g, fx * L, r * L, ang); wheel(g, rx * L, r * L, ang);
+    } else if (kind === "evtol") {
+      // Archer-style air taxi, seen a little from above: white fuselage, one long wing reaching up and back,
+      // three booms on the wing, each with a forward tilt prop and a lift prop on top, and a V-tail
+      const bob = Math.sin(t * 2.2) * 0.012 * L, spin = Math.abs(t) * 40;
+      g.save(); g.translate(0, bob + 0.08 * L);
+      const booms = [[0.1, -0.5], [0.065, -0.43], [0.03, -0.36]];   // far to near: x shift, height on the wing
+      const boom = ([dx, y], k, shadeA) => {
+        g.fillStyle = shadeA; g.fillRect((-0.3 + dx) * L, (y - 0.007) * L, 0.64 * L, 0.014 * L);
+        // forward tilt prop: a blurred disc seen side on, with a spinning blade
+        const fx = (0.34 + dx) * L, yy = y * L;
+        g.fillStyle = "#2a2f36"; g.beginPath(); g.ellipse(fx - 0.02 * L, yy, 0.028 * L, 0.011 * L, 0, 0, Math.PI * 2); g.fill();
+        g.fillStyle = "rgba(190,205,222,.5)"; g.beginPath(); g.ellipse(fx + 0.01 * L, yy, 0.012 * L, 0.07 * L, 0, 0, Math.PI * 2); g.fill();
+        g.strokeStyle = "#2a2f36"; g.lineWidth = Math.max(1.5, L * 0.008); const bl = Math.cos(spin + k) * 0.066 * L;
+        g.beginPath(); g.moveTo(fx + 0.01 * L, yy - bl); g.lineTo(fx + 0.01 * L, yy + bl); g.stroke();
+        // lift prop on a short mast at the back of the boom
+        const rx = (-0.27 + dx) * L, ry = (y - 0.035) * L;
+        g.fillStyle = "#2a2f36"; g.fillRect(rx - 0.006 * L, ry, 0.012 * L, 0.035 * L);
+        g.fillStyle = "rgba(190,205,222,.5)"; g.beginPath(); g.ellipse(rx, ry, 0.08 * L, 0.016 * L, 0, 0, Math.PI * 2); g.fill();
+        const bl2 = Math.cos(spin * 1.1 + k * 2) * 0.08 * L;
+        g.beginPath(); g.moveTo(rx - bl2, ry - 0.004 * L); g.lineTo(rx + bl2, ry + 0.004 * L); g.stroke();
+      };
+      // the wing, reaching up and back from the roof
+      const wing = g.createLinearGradient(0, -0.52 * L, 0, -0.28 * L); wing.addColorStop(0, "#f9fbfc"); wing.addColorStop(1, "#c9d1da");
+      g.fillStyle = wing; path(g, L, [[0.1, -0.275], [0.16, -0.525], [0.04, -0.525], [-0.12, -0.27]]); g.fill();
+      g.strokeStyle = "rgba(0,0,0,.18)"; g.lineWidth = Math.max(1, L * 0.004); path(g, L, [[0.1, -0.275], [0.16, -0.525], [0.04, -0.525], [-0.12, -0.27]]); g.stroke();
+      booms.forEach((bm, k) => boom(bm, k, k === 2 ? "#3a414b" : "#59606b"));
+      // V-tail
+      g.fillStyle = "#dfe4ea"; path(g, L, [[-0.34, -0.225], [-0.45, -0.37], [-0.5, -0.37], [-0.46, -0.215]]); g.fill();
+      g.fillStyle = "#1f2a44"; path(g, L, [[-0.45, -0.37], [-0.5, -0.37], [-0.49, -0.34], [-0.44, -0.345]]); g.fill();
+      // fuselage
+      const white = g.createLinearGradient(0, -0.28 * L, 0, -0.09 * L); white.addColorStop(0, "#ffffff"); white.addColorStop(0.6, "#e9edf2"); white.addColorStop(1, "#aab3bf");
+      g.fillStyle = white;
+      path(g, L, [[0.44, -0.175], [0.43, -0.13, 0.32, -0.105], [0.0, -0.095], [-0.25, -0.11], [-0.42, -0.19], [-0.46, -0.215], [-0.3, -0.235], [-0.1, -0.27], [0.12, -0.275, 0.25, -0.235], [0.38, -0.215, 0.44, -0.175]]);
+      g.fill();
+      g.fillStyle = "#1f2a44"; path(g, L, [[0.4, -0.13], [0.3, -0.112], [0.0, -0.103], [-0.25, -0.118], [-0.38, -0.17], [-0.25, -0.135], [0.0, -0.12], [0.3, -0.128]]); g.fill();
+      // windows
+      g.fillStyle = GLASS; path(g, L, [[0.37, -0.2], [0.28, -0.245, 0.16, -0.262], [0.13, -0.21]]); g.fill();
+      [[0.08, -0.04], [-0.06, -0.18]].forEach(([a, b]) => { path(g, L, [[a, -0.248], [b, -0.248], [b - 0.01, -0.2], [a - 0.01, -0.2]]); g.fill(); });
+      g.fillStyle = "rgba(255,255,255,.18)"; path(g, L, [[0.33, -0.205], [0.27, -0.235, 0.19, -0.25], [0.2, -0.215]]); g.fill();
+      seam(g, L, 0.11, -0.255, 0.1, -0.12, 0.2);
+      // nav lights
+      g.fillStyle = "#ff3b3b"; g.beginPath(); g.arc(-0.48 * L, -0.36 * L, 0.009 * L, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#2ee66b"; g.beginPath(); g.arc(0.16 * L, -0.525 * L, 0.009 * L, 0, Math.PI * 2); g.fill();
+      g.fillStyle = Math.sin(t * 6) > 0.6 ? "#ffffff" : "#9fe8ff"; g.beginPath(); g.arc(0.44 * L, -0.172 * L, 0.008 * L, 0, Math.PI * 2); g.fill();
+      g.restore();
     } else if (kind === "suv") {
       // a boxy SUV with a grille, chrome trim, roof rails and no roof sensor
       const r = 0.085, fx = 0.31, rx = -0.31;
@@ -408,7 +454,7 @@
       g.fillStyle = paint(g, c, L, -0.32, -0.05);
       if (rainbow) {   // bright bands top to bottom, drifting slowly so it shimmers
         const gr = g.createLinearGradient(-0.5 * L, -0.32 * L, 0.5 * L, -0.05 * L), cols = ["#ff2d2d", "#ff8c1a", "#ffe11a", "#2ecc40", "#1e90ff", "#8e44ff", "#ff3fb4"];
-        const off = (t * 0.15) % 1;
+        const off = (((t * 0.15) % 1) + 1) % 1;
         for (let k = 0; k <= 14; k++) { const pos = (k / 14 + off) % 1; gr.addColorStop(pos, cols[k % 7]); }
         g.fillStyle = gr;
       } else if (gold) {
@@ -448,8 +494,8 @@
       }
     }
   }
-  const SIZE = { beetle: 0.82, rainbow: 1, gold: 1, tesla: 1, waymo: 1, cybertruck: 1.18, cybercab: 0.86, roadster: 0.95, sedan: 1, suv: 1, pickup: 1.15, van: 1.05, hatch: 0.85, taxi: 1, sports: 0.98, bus: 2.2 };
-  const HEIGHT = { beetle: 0.38, rainbow: 0.33, gold: 0.33, tesla: 0.36, waymo: 0.45, cybertruck: 0.34, cybercab: 0.35, roadster: 0.5, sedan: 0.33, suv: 0.39, pickup: 0.41, van: 0.41, hatch: 0.34, taxi: 0.37, sports: 0.3, bus: 0.35 };
+  const SIZE = { evtol: 1.15, beetle: 0.82, rainbow: 1, gold: 1, tesla: 1, waymo: 1, cybertruck: 1.18, cybercab: 0.86, roadster: 0.95, sedan: 1, suv: 1, pickup: 1.15, van: 1.05, hatch: 0.85, taxi: 1, sports: 0.98, bus: 2.2 };
+  const HEIGHT = { evtol: 0.47, beetle: 0.38, rainbow: 0.33, gold: 0.33, tesla: 0.36, waymo: 0.45, cybertruck: 0.34, cybercab: 0.35, roadster: 0.5, sedan: 0.33, suv: 0.39, pickup: 0.41, van: 0.41, hatch: 0.34, taxi: 0.37, sports: 0.3, bus: 0.35 };
   function thumb(kind, w) {
     const c = document.createElement("canvas"), dpr = Math.min(2, window.devicePixelRatio || 1);
     c.width = w * dpr; c.height = w / 2 * dpr;
@@ -480,9 +526,11 @@
   ["pointerdown", "touchend", "keydown"].forEach(ev => document.addEventListener(ev, () => Snd.init(), { capture: true, passive: true }));
 
   // ================================================================ the highway
-  const cv = $("game"), g = cv.getContext("2d");
+  const cv = $("game"), g = cv.getContext("2d", { alpha: false });
+  // blurred glows are very slow on tablets; the moving game draws without them (the Car Guide pictures keep them)
+  try { Object.defineProperty(g, "shadowBlur", { get() { return 0; }, set() {}, configurable: true }); } catch (e) {}
   let W = 0, H = 0, DPR = 1;
-  function resize() { DPR = Math.min(2, window.devicePixelRatio || 1); W = window.innerWidth; H = window.innerHeight; cv.width = W * DPR; cv.height = H * DPR; }
+  function resize() { DPR = Math.min(1.5, window.devicePixelRatio || 1); W = window.innerWidth; H = window.innerHeight; cv.width = W * DPR; cv.height = H * DPR; }
   window.addEventListener("resize", resize); resize();
   const LEVELS = {
     easy:   { name: "Easy",   speed: [110, 170], gap: [1.1, 1.9], special: 0.55, wrong: 0, time: 60 },
@@ -495,28 +543,31 @@
     { top: "#3a6fd8", bot: "#a8d4ff", hill: "#5a9a5a", hill2: "#3f7f45", grass: "#6ab04c", city: "#8a9fbf" },
   ];
   let sky = SKIES[0];
-  let state = "menu", lv = LEVELS.normal, cars = [], pops = [], spawnT = [0, 0], score = 0, timeLeft = 60, scroll = 0, tNow = 0, round = null;
+  let skyT = 12, state = "menu", lv = LEVELS.normal, cars = [], pops = [], spawnT = [0, 0], score = 0, timeLeft = 60, scroll = 0, tNow = 0, round = null;
   const rand = (a, b) => a + Math.random() * (b - a);
   function laneInfo() {
     const unit = Math.max(110, Math.min(270, Math.min(W, H * 1.4) * 0.3));
     return [
       { y: H * 0.735, L: unit * 0.62, dir: -1 },   // far lane, coming toward the left
       { y: H * 0.93, L: unit, dir: 1 },            // near lane, going right
+      { y: H * 0.42, L: unit * 0.8, dir: 1 },      // the sky: only the flying air taxi uses it
     ];
   }
   function spawn(lane) {
     const li = laneInfo()[lane];
     const special = Math.random() < lv.special;
     let kind;
-    if (special) { const r = Math.random(); kind = r < 0.24 ? "beetle" : r < 0.33 ? "rainbow" : r < 0.42 ? "gold" : r < 0.64 ? "tesla" : r < 0.8 ? "cybertruck" : r < 0.9 ? "waymo" : r < 0.975 ? "cybercab" : "roadster"; }
+    if (lane === 2) kind = "evtol";
+    else if (special) { const r = Math.random(); kind = r < 0.24 ? "beetle" : r < 0.33 ? "rainbow" : r < 0.42 ? "gold" : r < 0.64 ? "tesla" : r < 0.8 ? "cybertruck" : r < 0.9 ? "waymo" : r < 0.975 ? "cybercab" : "roadster"; }
     else kind = pick(DECOYS);
     const col = kind === "tesla" ? pick(PAINT.tesla) : pick(PAINT[kind] || ["#c8202f"]);
     const L = li.L * SIZE[kind];
-    const speed = rand(lv.speed[0], lv.speed[1]) * (W / 1000 + 0.4) * (lane === 0 ? 0.8 : 1) * (kind === "bus" ? 0.8 : 1);
-    const x = li.dir > 0 ? -L : W + L;
+    const speed = rand(lv.speed[0], lv.speed[1]) * (W / 1000 + 0.4) * (lane === 0 ? 0.8 : lane === 2 ? 0.9 : 1) * (kind === "bus" ? 0.8 : 1);
+    const dir = lane === 2 ? (Math.random() < 0.5 ? 1 : -1) : li.dir;
+    const x = dir > 0 ? -L : W + L;
     // keep a safe gap to the car ahead in the same lane
     for (const c of cars) if (c.lane === lane && Math.abs(c.x - x) < (c.L + L) * 0.6) return;
-    cars.push({ kind, col, lane, dir: li.dir, x, L, speed, spotted: false, shake: 0, glow: 0 });
+    cars.push({ kind, col, lane, dir, x, L, speed, spotted: false, shake: 0, glow: 0 });
   }
   function bbox(c) {
     const li = laneInfo()[c.lane], h = (HEIGHT[c.kind] || 0.55) * c.L;
@@ -540,7 +591,8 @@
       round.best = Math.max(round.best, round.streak);
       pops.push({ x: c.x, y: bbox(c).y0, text: "+" + p + " " + TARGETS[c.kind].name.toUpperCase() + "!", life: 1.3, big: p >= 6 });
       Snd.spot(p);
-      if (c.kind === "roadster") { confetti(60); pops.push({ x: W / 2, y: H * 0.28, text: "FLYING ROADSTER!!", life: 2, big: true }); }
+      if (c.kind === "evtol") { confetti(24); pops.push({ x: W / 2, y: H * 0.28, text: "AIR TAXI!! +20", life: 2, big: true }); }
+      if (c.kind === "roadster") { confetti(24); pops.push({ x: W / 2, y: H * 0.28, text: "FLYING ROADSTER!!", life: 2, big: true }); }
       if (round.streak > 0 && round.streak % 5 === 0) { pops.push({ x: W / 2, y: H * 0.32, text: round.streak + " IN A ROW!", life: 1.4, big: true }); }
     } else {
       c.shake = 0.4; round.streak = 0; round.misses++;
@@ -591,7 +643,7 @@
   }
   function drawCars(dt) {
     const lanes = laneInfo();
-    for (const lane of [0, 1]) {
+    for (const lane of [2, 0, 1]) {
       for (const c of cars) {
         if (c.lane !== lane) continue;
         const li = lanes[lane];
@@ -599,10 +651,10 @@
         const sx = c.shake > 0 ? Math.sin(tNow * 60) * 6 : 0;
         g.translate(c.x + sx, li.y);
         // shadow
-        g.fillStyle = "rgba(0,0,0,.25)"; g.beginPath(); g.ellipse(0, 0, c.L * 0.5, c.L * 0.04, 0, 0, Math.PI * 2); g.fill();
+        if (lane !== 2) { g.fillStyle = "rgba(0,0,0,.25)"; g.beginPath(); g.ellipse(0, 0, c.L * 0.5, c.L * 0.04, 0, 0, Math.PI * 2); g.fill(); }
         if (c.dir < 0) g.scale(-1, 1);
-        if (c.glow > 0) { g.shadowColor = "#ffe14d"; g.shadowBlur = 30 * c.glow; }
-        drawVehicle(g, c.kind, c.col, c.L, tNow * (c.speed / 200) * c.dir);
+        if (c.glow > 0 || c.kind === "gold") { g.fillStyle = c.glow > 0 ? "rgba(255,225,77," + (0.55 * c.glow) + ")" : "rgba(255,215,0,.22)"; g.beginPath(); g.ellipse(0, -c.L * 0.18, c.L * 0.6, c.L * 0.26, 0, 0, Math.PI * 2); g.fill(); }
+        try { drawVehicle(g, c.kind, c.col, c.L, tNow * (c.speed / 200) * c.dir); } catch (err) { g.shadowBlur = 0; }   // one bad drawing must never stop the game
         g.shadowBlur = 0;
         g.restore();
         if (c.spotted) {
@@ -619,7 +671,7 @@
       const p = pops[i]; p.life -= dt; p.y -= dt * 60;
       if (p.life <= 0) { pops.splice(i, 1); continue; }
       g.globalAlpha = Math.min(1, p.life * 2);
-      g.font = "900 " + (p.big ? 34 : 26) + "px " + getComputedStyle(document.body).fontFamily;
+      g.font = "900 " + (p.big ? 34 : 26) + "px " + (FONT || (FONT = getComputedStyle(document.body).fontFamily));
       g.textAlign = "center"; g.lineWidth = 6; g.strokeStyle = "#17202e"; g.fillStyle = p.bad ? "#ffb3ad" : (p.big ? "#ffd23f" : "#ffffff");
       const x = Math.max(120, Math.min(W - 120, p.x));
       g.strokeText(p.text, x, p.y); g.fillText(p.text, x, p.y);
@@ -627,10 +679,12 @@
     }
   }
 
-  let last = performance.now();
+  let last = performance.now(), FONT = "", covered = false, drawnStill = false;
   function frame(now) {
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
-    const moving = state === "play" || state === "menu";
+    const moving = (state === "play" || state === "menu") && !covered;
+    if (!moving) { if (!drawnStill) { drawnStill = true; drawWorld(0); drawCars(0); } requestAnimationFrame(frame); return; }
+    drawnStill = false;
     if (moving) { tNow += dt; scroll += dt * (state === "play" ? 260 : 120); }
     if (state === "play") {
       timeLeft -= dt;
@@ -638,6 +692,7 @@
       if (sec !== round.lastSec) { round.lastSec = sec; $("timetext").textContent = Math.max(0, sec); if (sec <= 5 && sec > 0) Snd.tick(); }
       $("timefill").style.width = Math.max(0, timeLeft / lv.time * 100) + "%";
       for (let k = 0; k < 2; k++) { spawnT[k] -= dt; if (spawnT[k] <= 0) { spawnT[k] = rand(lv.gap[0], lv.gap[1]) * (k === 0 ? 1.15 : 1); spawn(k); } }
+      skyT -= dt; if (skyT <= 0) { skyT = rand(9, 15); if (Math.random() < 1 / 9 && !cars.some(c => c.lane === 2)) spawn(2); }
       if (timeLeft <= 0) endRound();
     } else if (state === "menu") {
       for (let k = 0; k < 2; k++) { spawnT[k] -= dt; if (spawnT[k] <= 0) { spawnT[k] = rand(1.2, 2.2); spawn(k); } }
@@ -660,7 +715,7 @@
 
   // ================================================================ screens
   const screens = ["sHome", "sPlay", "sPause", "sOver", "sTally", "sGuide", "sScores"];
-  function show(id) { screens.forEach(s => { $(s).hidden = s !== id; }); }
+  function show(id) { screens.forEach(s => { $(s).hidden = s !== id; }); covered = !!id && id !== "sHome"; }
   function targetCards(withPts) {
     const box = el("div", { class: "targets" });
     ORDER.forEach(k => box.append(el("div", { class: "target" }, thumb(k, 170), TARGETS[k].name, withPts ? el("span", { class: "pts" }, TARGETS[k].pts + " pts") : null)));
@@ -690,13 +745,13 @@
     const m = el("div", { class: "menu" });
     [["easy", "Slow cars, lots of targets"], ["normal", "Just right"], ["hard", "Fast cars, and tapping a wrong car costs 2 points"]].forEach(([k, d]) =>
       m.append(el("button", { class: "big" + (k === data.level ? " yellow" : ""), onclick: () => { data.level = k; save(); start(); } }, LEVELS[k].name.toUpperCase(), el("small", null, d))));
-    s.append(m, el("div", { class: "tip" }, "Tap only Teslas, Waymos, Cybertrucks and Cybercabs. Every other car is a trick!"),
+    s.append(m, el("div", { class: "tip" }, "Tap only the cars in the Car Guide. Every other car is a trick!"),
       el("button", { class: "pill", onclick: home }, "← Back"));
     show("sPlay");
   }
   function start() {
     lv = LEVELS[data.level]; sky = SKIES[Math.floor(Math.random() * SKIES.length)];
-    cars.length = 0; pops.length = 0; score = 0; timeLeft = lv.time; spawnT = [0.3, 0.8];
+    cars.length = 0; pops.length = 0; score = 0; timeLeft = lv.time; spawnT = [0.3, 0.8]; skyT = rand(9, 15);
     round = { counts: {}, streak: 0, best: 0, misses: 0, missed: 0, lastSec: -1 };
     $("score").textContent = "0";
     const lg = $("legend"); lg.innerHTML = "";
@@ -764,6 +819,7 @@
       waymo: "A white Jaguar that drives itself. Look for the tall black sensor tower on the roof, cameras on the corners and \"waymo\" on the door.",
       cybercab: "A tiny gold two-seater robotaxi shaped like a teardrop, with light bars on both ends and no steering wheel inside.",
       roadster: "Super rare! A low red sports car that flies on rocket thrusters. If you see one, tap it fast!",
+      evtol: "The rarest of all! An electric air taxi with a wing and lots of little propellers. It only flies, so look up in the sky!",
     };
     s.append(el("h2", null, "Car Guide"));
     ORDER.forEach(k => s.append(el("div", { class: "panel", style: "display:flex;gap:14px;align-items:center;flex-wrap:wrap" }, thumb(k, 220),
@@ -826,7 +882,7 @@
     show("sTally");
   }
 
-  if (location.hash === "#test") window.__spot = { get state() { return state; }, get score() { return score; }, cars, tap, start, endRound, levelPick, home, tally, laneInfo, bbox, set time(v) { timeLeft = v; } };
+  if (location.hash === "#test") window.__spot = { get state() { return state; }, get score() { return score; }, cars, tap, start, endRound, levelPick, home, tally, laneInfo, bbox, spawn, drawVehicle, TARGETS, set time(v) { timeLeft = v; } };
   home();
   requestAnimationFrame(frame);
   if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
